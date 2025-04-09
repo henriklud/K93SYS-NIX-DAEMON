@@ -1,4 +1,4 @@
-K93SYS NIX Daemon - Integrate your *nix system into Home Assistant through MQTT! 
+K93SYS NIX Daemon - Integrate your *nix system into Home Assistant with Bash and MQTT! 
 
 Features:
  - Utilization sensors
