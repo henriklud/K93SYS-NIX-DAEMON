@@ -1,12 +1,10 @@
 #!/bin/bash
 
-# Get the directory of the currently running script
 path=$(dirname "$(realpath "$0")")
 script_path=("$path/$1")
 
-# Source the configuration file from the same directory
 source "$script_path/config.conf"
-version="1.0.0-RC-6.23"
+version="0.6.12"
 
 
 mqtt_connection_throttle=".125"
@@ -14,16 +12,14 @@ mqtt_connection_throttle=".125"
 mqtt_device="$mqtt_devicename"
 
 status="run"
-pids=()  # Array to store background process IDs
+pids=()  
 
-# Function to clean up background processes
 cleanup() {
     echo "Stopping script..."
     rm k93sys.log
     mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device-status -m 'offline'
     sleep 1s
     pkill -f -9 *K93SYS.sh*
-   # pkill -f -9 mosquitto_sub*
     for pid in "${pids[@]}"; do
         kill "$pid" 2>/dev/null
     done
@@ -31,45 +27,43 @@ cleanup() {
     exit 0
 }
 
-# Trap signals (e.g., CTRL+C or kill)
 trap cleanup SIGINT SIGTERM
 
-BRIGHT_BLACK='\033[1;30m'  # Bright Black (Gray)
-BRIGHT_RED='\033[1;31m'    # Bright Red
-BRIGHT_GREEN='\033[1;32m'  # Bright Green
-BRIGHT_YELLOW='\033[1;33m' # Bright Yellow
-BRIGHT_BLUE='\033[1;34m'   # Bright Blue
-BRIGHT_PURPLE='\033[1;35m' # Bright Purple
-BRIGHT_CYAN='\033[1;36m'   # Bright Cyan
-BRIGHT_WHITE='\033[1;37m'  # Bright White
+BRIGHT_BLACK='\033[1;30m'  
+BRIGHT_RED='\033[1;31m'    
+BRIGHT_GREEN='\033[1;32m'  
+BRIGHT_YELLOW='\033[1;33m' 
+BRIGHT_BLUE='\033[1;34m'   
+BRIGHT_PURPLE='\033[1;35m'
+BRIGHT_CYAN='\033[1;36m'  
+BRIGHT_WHITE='\033[1;37m'
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 PURPLE='\033[0;35m'
 CYAN='\033[0;36m'
-RESET='\033[0m'  # Reset color
-BOLD='\033[1m'  # Bold text
+RESET='\033[0m' 
+BOLD='\033[1m'
 
 log=""
 current_time=$(date +'%H:%M:%S')
 rm k93sys.log
 touch k93sys.log
-# Function to add a log entry
+
 log_file="k93sys.log"
 add_log_entry() {
-    timestamp=$(date +"%H:%M:%S")  # Get current time in hh:mm:ss format
-    log_entry="$timestamp $1"  # Prepend the timestamp to the log entry
-    echo "$log_entry" >> "$log_file"  # Append the log entry to the log file
+    timestamp=$(date +"%H:%M:%S") 
+    log_entry="$timestamp $1" 
+    echo "$log_entry" >> "$log_file"
 }
 
 clear
-header_lines=10  # Number of lines for the header
+header_lines=10
 max_log_lines=28
 
 if [[ $app_tui == "true" ]]
     then
-    # Function to display the header
     display_header() {
         echo -e "${BRIGHT_PURPLE}###############################################################################"
         echo -e "${BRIGHT_PURPLE}#                                ${BRIGHT_RED}${BOLD}K93SYS-NIX-DAEMON${RESET}                            ${BRIGHT_PURPLE}#"
@@ -86,48 +80,36 @@ if [[ $app_tui == "true" ]]
 fi
 if [[ $app_tui == "true" ]]
     then
-        # Function to manage log size (clear log if it exceeds the maximum number of lines)
         manage_log_size() {
-        #  max_log_lines=3
-            log_lines=$(wc -l < "$log_file")  # Get the current number of lines in the log file
+            log_lines=$(wc -l < "$log_file")
             if [ "$log_lines" -gt "$max_log_lines" ]; then
-                # If the log exceeds the max allowed lines, truncate it
                 tail -n "$max_log_lines" "$log_file" > "$log_file.tmp" && mv "$log_file.tmp" "$log_file"
             fi
         }
 
-        # Main loop
         (
             while :; do
-                # Get terminal height and subtract space for the header
                 rows=$(tput lines)
-                log_height=$((rows - header_lines))  # Calculate space available for logs
+                log_height=$((rows - header_lines))
 
-                # Display the header only once
                 if [ -z "$header_displayed" ]; then
                     display_header
                     header_displayed=true
                 fi
 
-                # Clear only the log area (below the header)
-                tput cup $header_lines 0  # Move cursor to the start of the log area
-                tput ed  # Clear everything below the current cursor position (log area)
+                tput cup $header_lines 0 
+                tput ed  
 
-                # Manage log size: clear log if it exceeds the max size
                 manage_log_size
 
-                # Display the log (scrolling only the log area)
-                tput cup $header_lines 0  # Move cursor to the start of the log area
-                tail -n $log_height "$log_file"  # Display the last $log_height lines of the log
-
-                # Wait before updating the screen again
+                tput cup $header_lines 0
+                tail -n $log_height "$log_file"
                 sleep 3s
             done&
         )&
         pids+=($!)
 fi
 
-# Initialization
 sleep 1s
 
 if [[ $app_tui == "true" ]]
@@ -146,9 +128,9 @@ sleep 1s
         if [[ $app_tui == "true" ]]
             then    
                 add_log_entry() {
-                    timestamp=$(date +"%H:%M:%S")  # Get current time in hh:mm:ss format
-                    log_entry="$timestamp $1"  # Prepend the timestamp to the log entry
-                    echo "$log_entry" >> "$log_file"  # Append the log entry to the log file
+                    timestamp=$(date +"%H:%M:%S") 
+                    log_entry="$timestamp $1" 
+                    echo "$log_entry" >> "$log_file"
                 }
         fi
         mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd \
@@ -224,9 +206,6 @@ sleep 1s
                 fi
 
         fi     
-
-
-
 
         if [[ $custom_action_1_enabled == "true" ]]        
             then      
@@ -369,7 +348,6 @@ sleep 1s
         fi
         if [[ $cmd_public_ip != "" ]]       
             then        
-        # Publish Public IP Data
                 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd \
                 -t "$mqtt_discovery_prefix/sensor/$mqtt_device/public_ip/config" \
                 -m "{\"unique_id\": \"$mqtt_device-public_ip\", \"icon\": \"mdi:network\", \"name\": \"Public IP\", \"state_topic\": \"$mqtt_topic/$mqtt_device/public_ip\", \"device\": {\"identifiers\": [\"$mqtt_device\"], \"name\": \"$mqtt_devicename\", \"sw_version\": \"$version\", \"model\": \"$device_model\", \"model_id\": \"$device_modelid\", \"serial_number\": \"$device_sn\", \"manufacturer\": \"$device_manufacturer\"}}"
@@ -377,7 +355,6 @@ sleep 1s
         fi
         if [[ $cmd_cpu_name != "" ]]        
             then       
-        # Publish CPU Name Data
                 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd \
                 -t "$mqtt_discovery_prefix/sensor/$mqtt_device/cpu_name/config" \
                 -m "{\"unique_id\": \"$mqtt_device-cpu_name\", \"icon\": \"mdi:cpu-64-bit\", \"name\": \"CPU Name\", \"state_topic\": \"$mqtt_topic/$mqtt_device/cpu_name\", \"device\": {\"identifiers\": [\"$mqtt_device\"], \"name\": \"$mqtt_devicename\", \"sw_version\": \"$version\", \"model\": \"$device_model\", \"model_id\": \"$device_modelid\", \"serial_number\": \"$device_sn\", \"manufacturer\": \"$device_manufacturer\"}}"
@@ -385,7 +362,6 @@ sleep 1s
         fi
         if [[ $cmd_kernel_version != "" ]]        
             then      
-        # Publish Kernel Version Data & hostname
                 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd \
                 -t "$mqtt_discovery_prefix/sensor/$mqtt_device/kernel_version/config" \
                 -m "{\"unique_id\": \"$mqtt_device-kernel_version\", \"icon\": \"mdi:penguin\", \"name\": \"Kernel Version\", \"state_topic\": \"$mqtt_topic/$mqtt_device/kernel_version\", \"device\": {\"identifiers\": [\"$mqtt_device\"], \"name\": \"$mqtt_devicename\", \"sw_version\": \"$version\", \"model\": \"$device_model\", \"model_id\": \"$device_modelid\", \"serial_number\": \"$device_sn\", \"manufacturer\": \"$device_manufacturer\"}}"
@@ -397,15 +373,9 @@ sleep 1s
                 -m "{\"unique_id\": \"$mqtt_device-hostname\", \"icon\": \"mdi:server\", \"name\": \"hostname\", \"state_topic\": \"$mqtt_topic/$mqtt_device/hostname\", \"device\": {\"identifiers\": [\"$mqtt_device\"], \"name\": \"$mqtt_devicename\", \"sw_version\": \"$version\", \"model\": \"$device_model\", \"model_id\": \"$device_modelid\", \"serial_number\": \"$device_sn\", \"manufacturer\": \"$device_manufacturer\"}}"
                 sleep $mqtt_connection_throttle
         fi
-        # Components init - Discovery configuration topics \"icon\": \"mdi:thermometer\", 
-
-        ################################
-        #   LM-SENSORS                 #
-        ################################
         if [[ $lmsnsr_enabled == "true" ]]
             then
 
-                # lmsnsr_1
                 if [[ $lmsnsr_1_enabled == "true" ]]
                     then
                         mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd \
@@ -414,7 +384,6 @@ sleep 1s
                         sleep $mqtt_connection_throttle                
                 fi
 
-                # lmsnsr_2
                 if [[ $lmsnsr_2_enabled == "true" ]]
                     then
                         mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd \
@@ -423,7 +392,6 @@ sleep 1s
                         sleep $mqtt_connection_throttle                
                 fi
 
-                # lmsnsr_3
                 if [[ $lmsnsr_3_enabled == "true" ]]
                     then
                         mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd \
@@ -432,7 +400,6 @@ sleep 1s
                         sleep $mqtt_connection_throttle                
                 fi
 
-                # lmsnsr_4
                 if [[ $lmsnsr_4_enabled == "true" ]]
                     then
                         mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd \
@@ -441,7 +408,6 @@ sleep 1s
                         sleep $mqtt_connection_throttle                
                 fi
 
-                # lmsnsr_5
                 if [[ $lmsnsr_5_enabled == "true" ]]
                     then
                         mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd \
@@ -450,7 +416,6 @@ sleep 1s
                         sleep $mqtt_connection_throttle                
                 fi
 
-                # lmsnsr_6
                 if [[ $lmsnsr_6_enabled == "true" ]]
                     then
                         mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd \
@@ -459,7 +424,6 @@ sleep 1s
                         sleep $mqtt_connection_throttle                
                 fi
 
-                # lmsnsr_7
                 if [[ $lmsnsr_7_enabled == "true" ]]
                     then
                         mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd \
@@ -468,7 +432,6 @@ sleep 1s
                         sleep $mqtt_connection_throttle                
                 fi
 
-                # lmsnsr_8
                 if [[ $lmsnsr_8_enabled == "true" ]]
                     then
                         mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd \
@@ -477,7 +440,6 @@ sleep 1s
                         sleep $mqtt_connection_throttle                
                 fi
 
-                # lmsnsr_9
                 if [[ $lmsnsr_9_enabled == "true" ]]
                     then
                         mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd \
@@ -486,7 +448,6 @@ sleep 1s
                         sleep $mqtt_connection_throttle                
                 fi
 
-                # lmsnsr_10
                 if [[ $lmsnsr_10_enabled == "true" ]]
                     then
                         mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd \
@@ -667,7 +628,6 @@ sleep 1s
                             -m "{\"suggested_display_precision\": \"2\", \"state_class\": \"MEASUREMENT\", \"icon\": \"mdi:harddisk\", \"unique_id\": \"$mqtt_device-hddmon_1_total_space\",\"name\": \"$hddmon_1_name total space\", \"state_topic\": \"$mqtt_topic/$mqtt_device/hddmon_1_total_space\", \"unit_of_measurement\": \"GB\", \"device\": {\"identifiers\": [\"$mqtt_device\"], \"name\": \"$mqtt_devicename\", \"sw_version\": \"$version\", \"model\": \"$device_model\", \"model_id\": \"$device_modelid\", \"serial_number\": \"$device_sn\", \"manufacturer\": \"$device_manufacturer\"}}"
                         sleep $mqtt_connection_throttle
 
-                        # Publish HDD1 Data
                         mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd \
                             -t "$mqtt_discovery_prefix/sensor/$mqtt_device/hddmon_1_reads/config" \
                             -m "{\"suggested_display_precision\": \"2\", \"state_class\": \"MEASUREMENT\", \"icon\": \"mdi:harddisk\", \"unique_id\": \"$mqtt_device-hddmon_1_reads\",\"name\": \"$hddmon_1_name reads\", \"state_topic\": \"$mqtt_topic/$mqtt_device/hddmon_1_reads\", \"unit_of_measurement\": \"MB/s\", \"device\": {\"identifiers\": [\"$mqtt_device\"], \"name\": \"$mqtt_devicename\", \"sw_version\": \"$version\", \"manufacturer\": \"$device_manufacturer\"}}"
@@ -677,13 +637,11 @@ sleep 1s
                             -m "{\"suggested_display_precision\": \"2\", \"state_class\": \"MEASUREMENT\", \"icon\": \"mdi:harddisk\", \"unique_id\": \"$mqtt_device-hddmon_1_writes\",\"name\": \"$hddmon_1_name writes\", \"state_topic\": \"$mqtt_topic/$mqtt_device/hddmon_1_writes\", \"unit_of_measurement\": \"MB/s\", \"device\": {\"identifiers\": [\"$mqtt_device\"], \"name\": \"$mqtt_devicename\", \"sw_version\": \"$version\", \"manufacturer\": \"$device_manufacturer\"}}"
                         sleep $mqtt_connection_throttle
                         
-                        # Publish HDD1 Model Configuration (Icon: mdi:tag)
                         mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd \
                             -t "$mqtt_discovery_prefix/sensor/$mqtt_device/hddmon_1_model/config" \
                             -m "{\"unique_id\": \"$mqtt_device-hddmon_1_model\", \"name\": \"$hddmon_1_name model\", \"state_topic\": \"$mqtt_topic/$mqtt_device/hddmon_1_model\", \"icon\": \"mdi:tag\", \"device\": {\"identifiers\": [\"$mqtt_device\"], \"name\": \"$mqtt_devicename\", \"sw_version\": \"$version\", \"manufacturer\": \"$device_manufacturer\"}}"
                         sleep $mqtt_connection_throttle
                         
-                        # Publish HDD1 SMART Errors Configuration (Icon: mdi:alert-circle)
                         mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd \
                             -t "$mqtt_discovery_prefix/sensor/$mqtt_device/hddmon_1_smart_errors/config" \
                             -m "{\"unique_id\": \"$mqtt_device-hddmon_1_smart_errors\", \"name\": \"$hddmon_1_name smart errors\", \"state_topic\": \"$mqtt_topic/$mqtt_device/hddmon_1_smart_errors\", \"icon\": \"mdi:alert-circle\", \"device\": {\"identifiers\": [\"$mqtt_device\"], \"name\": \"$mqtt_devicename\", \"sw_version\": \"$version\", \"manufacturer\": \"$device_manufacturer\"}}"
@@ -709,7 +667,6 @@ sleep 1s
                             -m "{\"suggested_display_precision\": \"2\", \"state_class\": \"MEASUREMENT\", \"icon\": \"mdi:harddisk\", \"unique_id\": \"$mqtt_device-hddmon_2_total_space\",\"name\": \"$hddmon_2_name total space\", \"state_topic\": \"$mqtt_topic/$mqtt_device/hddmon_2_total_space\", \"unit_of_measurement\": \"GB\", \"device\": {\"identifiers\": [\"$mqtt_device\"], \"name\": \"$mqtt_devicename\", \"sw_version\": \"$version\", \"model\": \"$device_model\", \"model_id\": \"$device_modelid\", \"serial_number\": \"$device_sn\", \"manufacturer\": \"$device_manufacturer\"}}"
                         sleep $mqtt_connection_throttle
 
-                        # Publish HDD1 Data
                         mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd \
                             -t "$mqtt_discovery_prefix/sensor/$mqtt_device/hddmon_2_reads/config" \
                             -m "{\"suggested_display_precision\": \"2\", \"state_class\": \"MEASUREMENT\", \"icon\": \"mdi:harddisk\", \"unique_id\": \"$mqtt_device-hddmon_2_reads\",\"name\": \"$hddmon_2_name reads\", \"state_topic\": \"$mqtt_topic/$mqtt_device/hddmon_2_reads\", \"unit_of_measurement\": \"MB/s\", \"device\": {\"identifiers\": [\"$mqtt_device\"], \"name\": \"$mqtt_devicename\", \"sw_version\": \"$version\", \"manufacturer\": \"$device_manufacturer\"}}"
@@ -719,13 +676,11 @@ sleep 1s
                             -m "{\"suggested_display_precision\": \"2\", \"state_class\": \"MEASUREMENT\", \"icon\": \"mdi:harddisk\", \"unique_id\": \"$mqtt_device-hddmon_2_writes\",\"name\": \"$hddmon_2_name writes\", \"state_topic\": \"$mqtt_topic/$mqtt_device/hddmon_2_writes\", \"unit_of_measurement\": \"MB/s\", \"device\": {\"identifiers\": [\"$mqtt_device\"], \"name\": \"$mqtt_devicename\", \"sw_version\": \"$version\", \"manufacturer\": \"$device_manufacturer\"}}"
                         sleep $mqtt_connection_throttle
                         
-                        # Publish HDD1 Model Configuration (Icon: mdi:tag)
                         mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd \
                             -t "$mqtt_discovery_prefix/sensor/$mqtt_device/hddmon_2_model/config" \
                             -m "{\"unique_id\": \"$mqtt_device-hddmon_2_model\", \"name\": \"$hddmon_2_name model\", \"state_topic\": \"$mqtt_topic/$mqtt_device/hddmon_2_model\", \"icon\": \"mdi:tag\", \"device\": {\"identifiers\": [\"$mqtt_device\"], \"name\": \"$mqtt_devicename\", \"sw_version\": \"$version\", \"manufacturer\": \"$device_manufacturer\"}}"
                         sleep $mqtt_connection_throttle
                         
-                        # Publish HDD1 SMART Errors Configuration (Icon: mdi:alert-circle)
                         mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd \
                             -t "$mqtt_discovery_prefix/sensor/$mqtt_device/hddmon_2_smart_errors/config" \
                             -m "{\"unique_id\": \"$mqtt_device-hddmon_2_smart_errors\", \"name\": \"$hddmon_2_name smart errors\", \"state_topic\": \"$mqtt_topic/$mqtt_device/hddmon_2_smart_errors\", \"icon\": \"mdi:alert-circle\", \"device\": {\"identifiers\": [\"$mqtt_device\"], \"name\": \"$mqtt_devicename\", \"sw_version\": \"$version\", \"manufacturer\": \"$device_manufacturer\"}}"
@@ -751,7 +706,6 @@ sleep 1s
                             -m "{\"suggested_display_precision\": \"2\", \"state_class\": \"MEASUREMENT\", \"icon\": \"mdi:harddisk\", \"unique_id\": \"$mqtt_device-hddmon_3_total_space\",\"name\": \"$hddmon_3_name total space\", \"state_topic\": \"$mqtt_topic/$mqtt_device/hddmon_3_total_space\", \"unit_of_measurement\": \"GB\", \"device\": {\"identifiers\": [\"$mqtt_device\"], \"name\": \"$mqtt_devicename\", \"sw_version\": \"$version\", \"model\": \"$device_model\", \"model_id\": \"$device_modelid\", \"serial_number\": \"$device_sn\", \"manufacturer\": \"$device_manufacturer\"}}"
                         sleep $mqtt_connection_throttle
 
-                        # Publish HDD1 Data
                         mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd \
                             -t "$mqtt_discovery_prefix/sensor/$mqtt_device/hddmon_3_reads/config" \
                             -m "{\"suggested_display_precision\": \"2\", \"state_class\": \"MEASUREMENT\", \"icon\": \"mdi:harddisk\", \"unique_id\": \"$mqtt_device-hddmon_3_reads\",\"name\": \"$hddmon_3_name reads\", \"state_topic\": \"$mqtt_topic/$mqtt_device/hddmon_3_reads\", \"unit_of_measurement\": \"MB/s\", \"device\": {\"identifiers\": [\"$mqtt_device\"], \"name\": \"$mqtt_devicename\", \"sw_version\": \"$version\", \"manufacturer\": \"$device_manufacturer\"}}"
@@ -761,13 +715,11 @@ sleep 1s
                             -m "{\"suggested_display_precision\": \"2\", \"state_class\": \"MEASUREMENT\", \"icon\": \"mdi:harddisk\", \"unique_id\": \"$mqtt_device-hddmon_3_writes\",\"name\": \"$hddmon_3_name writes\", \"state_topic\": \"$mqtt_topic/$mqtt_device/hddmon_3_writes\", \"unit_of_measurement\": \"MB/s\", \"device\": {\"identifiers\": [\"$mqtt_device\"], \"name\": \"$mqtt_devicename\", \"sw_version\": \"$version\", \"manufacturer\": \"$device_manufacturer\"}}"
                         sleep $mqtt_connection_throttle
                         
-                        # Publish HDD1 Model Configuration (Icon: mdi:tag)
                         mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd \
                             -t "$mqtt_discovery_prefix/sensor/$mqtt_device/hddmon_3_model/config" \
                             -m "{\"unique_id\": \"$mqtt_device-hddmon_3_model\", \"name\": \"$hddmon_3_name model\", \"state_topic\": \"$mqtt_topic/$mqtt_device/hddmon_3_model\", \"icon\": \"mdi:tag\", \"device\": {\"identifiers\": [\"$mqtt_device\"], \"name\": \"$mqtt_devicename\", \"sw_version\": \"$version\", \"manufacturer\": \"$device_manufacturer\"}}"
                         sleep $mqtt_connection_throttle
                         
-                        # Publish HDD1 SMART Errors Configuration (Icon: mdi:alert-circle)
                         mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd \
                             -t "$mqtt_discovery_prefix/sensor/$mqtt_device/hddmon_3_smart_errors/config" \
                             -m "{\"unique_id\": \"$mqtt_device-hddmon_3_smart_errors\", \"name\": \"$hddmon_3_name smart errors\", \"state_topic\": \"$mqtt_topic/$mqtt_device/hddmon_3_smart_errors\", \"icon\": \"mdi:alert-circle\", \"device\": {\"identifiers\": [\"$mqtt_device\"], \"name\": \"$mqtt_devicename\", \"sw_version\": \"$version\", \"manufacturer\": \"$device_manufacturer\"}}"
@@ -793,7 +745,6 @@ sleep 1s
                             -m "{\"suggested_display_precision\": \"2\", \"state_class\": \"MEASUREMENT\", \"icon\": \"mdi:harddisk\", \"unique_id\": \"$mqtt_device-hddmon_4_total_space\",\"name\": \"$hddmon_4_name total space\", \"state_topic\": \"$mqtt_topic/$mqtt_device/hddmon_4_total_space\", \"unit_of_measurement\": \"GB\", \"device\": {\"identifiers\": [\"$mqtt_device\"], \"name\": \"$mqtt_devicename\", \"sw_version\": \"$version\", \"model\": \"$device_model\", \"model_id\": \"$device_modelid\", \"serial_number\": \"$device_sn\", \"manufacturer\": \"$device_manufacturer\"}}"
                         sleep $mqtt_connection_throttle
 
-                        # Publish HDD1 Data
                         mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd \
                             -t "$mqtt_discovery_prefix/sensor/$mqtt_device/hddmon_4_reads/config" \
                             -m "{\"suggested_display_precision\": \"2\", \"state_class\": \"MEASUREMENT\", \"icon\": \"mdi:harddisk\", \"unique_id\": \"$mqtt_device-hddmon_4_reads\",\"name\": \"$hddmon_4_name reads\", \"state_topic\": \"$mqtt_topic/$mqtt_device/hddmon_4_reads\", \"unit_of_measurement\": \"MB/s\", \"device\": {\"identifiers\": [\"$mqtt_device\"], \"name\": \"$mqtt_devicename\", \"sw_version\": \"$version\", \"manufacturer\": \"$device_manufacturer\"}}"
@@ -803,13 +754,11 @@ sleep 1s
                             -m "{\"suggested_display_precision\": \"2\", \"state_class\": \"MEASUREMENT\", \"icon\": \"mdi:harddisk\", \"unique_id\": \"$mqtt_device-hddmon_4_writes\",\"name\": \"$hddmon_4_name writes\", \"state_topic\": \"$mqtt_topic/$mqtt_device/hddmon_4_writes\", \"unit_of_measurement\": \"MB/s\", \"device\": {\"identifiers\": [\"$mqtt_device\"], \"name\": \"$mqtt_devicename\", \"sw_version\": \"$version\", \"manufacturer\": \"$device_manufacturer\"}}"
                         sleep $mqtt_connection_throttle
                         
-                        # Publish HDD1 Model Configuration (Icon: mdi:tag)
                         mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd \
                             -t "$mqtt_discovery_prefix/sensor/$mqtt_device/hddmon_4_model/config" \
                             -m "{\"unique_id\": \"$mqtt_device-hddmon_4_model\", \"name\": \"$hddmon_4_name model\", \"state_topic\": \"$mqtt_topic/$mqtt_device/hddmon_4_model\", \"icon\": \"mdi:tag\", \"device\": {\"identifiers\": [\"$mqtt_device\"], \"name\": \"$mqtt_devicename\", \"sw_version\": \"$version\", \"manufacturer\": \"$device_manufacturer\"}}"
                         sleep $mqtt_connection_throttle
                         
-                        # Publish HDD1 SMART Errors Configuration (Icon: mdi:alert-circle)
                         mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd \
                             -t "$mqtt_discovery_prefix/sensor/$mqtt_device/hddmon_4_smart_errors/config" \
                             -m "{\"unique_id\": \"$mqtt_device-hddmon_4_smart_errors\", \"name\": \"$hddmon_4_name smart errors\", \"state_topic\": \"$mqtt_topic/$mqtt_device/hddmon_4_smart_errors\", \"icon\": \"mdi:alert-circle\", \"device\": {\"identifiers\": [\"$mqtt_device\"], \"name\": \"$mqtt_devicename\", \"sw_version\": \"$version\", \"manufacturer\": \"$device_manufacturer\"}}"
@@ -835,7 +784,6 @@ sleep 1s
                             -m "{\"suggested_display_precision\": \"2\", \"state_class\": \"MEASUREMENT\", \"icon\": \"mdi:harddisk\", \"unique_id\": \"$mqtt_device-hddmon_5_total_space\",\"name\": \"$hddmon_5_name total space\", \"state_topic\": \"$mqtt_topic/$mqtt_device/hddmon_5_total_space\", \"unit_of_measurement\": \"GB\", \"device\": {\"identifiers\": [\"$mqtt_device\"], \"name\": \"$mqtt_devicename\", \"sw_version\": \"$version\", \"model\": \"$device_model\", \"model_id\": \"$device_modelid\", \"serial_number\": \"$device_sn\", \"manufacturer\": \"$device_manufacturer\"}}"
                         sleep $mqtt_connection_throttle
 
-                        # Publish HDD1 Data
                         mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd \
                             -t "$mqtt_discovery_prefix/sensor/$mqtt_device/hddmon_5_reads/config" \
                             -m "{\"suggested_display_precision\": \"2\", \"state_class\": \"MEASUREMENT\", \"icon\": \"mdi:harddisk\", \"unique_id\": \"$mqtt_device-hddmon_5_reads\",\"name\": \"$hddmon_5_name reads\", \"state_topic\": \"$mqtt_topic/$mqtt_device/hddmon_5_reads\", \"unit_of_measurement\": \"MB/s\", \"device\": {\"identifiers\": [\"$mqtt_device\"], \"name\": \"$mqtt_devicename\", \"sw_version\": \"$version\", \"manufacturer\": \"$device_manufacturer\"}}"
@@ -845,13 +793,11 @@ sleep 1s
                             -m "{\"suggested_display_precision\": \"2\", \"state_class\": \"MEASUREMENT\", \"icon\": \"mdi:harddisk\", \"unique_id\": \"$mqtt_device-hddmon_5_writes\",\"name\": \"$hddmon_5_name writes\", \"state_topic\": \"$mqtt_topic/$mqtt_device/hddmon_5_writes\", \"unit_of_measurement\": \"MB/s\", \"device\": {\"identifiers\": [\"$mqtt_device\"], \"name\": \"$mqtt_devicename\", \"sw_version\": \"$version\", \"manufacturer\": \"$device_manufacturer\"}}"
                         sleep $mqtt_connection_throttle
                         
-                        # Publish HDD1 Model Configuration (Icon: mdi:tag)
                         mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd \
                             -t "$mqtt_discovery_prefix/sensor/$mqtt_device/hddmon_5_model/config" \
                             -m "{\"unique_id\": \"$mqtt_device-hddmon_5_model\", \"name\": \"$hddmon_5_name model\", \"state_topic\": \"$mqtt_topic/$mqtt_device/hddmon_5_model\", \"icon\": \"mdi:tag\", \"device\": {\"identifiers\": [\"$mqtt_device\"], \"name\": \"$mqtt_devicename\", \"sw_version\": \"$version\", \"manufacturer\": \"$device_manufacturer\"}}"
                         sleep $mqtt_connection_throttle
                         
-                        # Publish HDD1 SMART Errors Configuration (Icon: mdi:alert-circle)
                         mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd \
                             -t "$mqtt_discovery_prefix/sensor/$mqtt_device/hddmon_5_smart_errors/config" \
                             -m "{\"unique_id\": \"$mqtt_device-hddmon_5_smart_errors\", \"name\": \"$hddmon_5_name smart errors\", \"state_topic\": \"$mqtt_topic/$mqtt_device/hddmon_5_smart_errors\", \"icon\": \"mdi:alert-circle\", \"device\": {\"identifiers\": [\"$mqtt_device\"], \"name\": \"$mqtt_devicename\", \"sw_version\": \"$version\", \"manufacturer\": \"$device_manufacturer\"}}"
@@ -910,7 +856,7 @@ sleep 1s
     sleep 30s        
     done&
 )&
-pids+=($!)  # Add PID to the list
+pids+=($!)
 
 sleep 1s
 if [[ $app_tui == "true" ]]
@@ -919,7 +865,6 @@ if [[ $app_tui == "true" ]]
 fi
 sleep 1s
 
-# MQTT keep-alive loop
 (
     while :; do  
         mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/status -m 'online'
@@ -932,20 +877,15 @@ if [[ $k93sys_terminal_enabled == "true" ]]
     then
         mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/terminal-input -m ""
         sleep 0.3s
-        # Listen for MQTT commands
         (
             while :; do
                 mosquitto_sub -h "$server" -u "$mqtt_user" -P "$mqtt_pwd" -t "$mqtt_topic/$mqtt_device/terminal-input" | \
                 while read -r execmd_payload; do
                     if [[ -n "$execmd_payload" ]]; then   
                         echo "Received command: $execmd_payload"
-                        # Execute the command and capture output
                         terminal_output=$(eval "$execmd_payload" 2>&1)
-                        # Split output into lines and process each line
                         echo "$terminal_output" | while IFS= read -r line; do
-                            # Truncate line to 255 characters
                             truncated_line="${line:0:225}"
-                            # Publish the truncated line
                             mosquitto_pub -h "$server" -u "$mqtt_user" -P "$mqtt_pwd" -t "$mqtt_topic/$mqtt_device/terminal-output" -m "$truncated_line"   
                             if [[ $cluster_management != "false" ]]        
                                 then 
@@ -969,8 +909,6 @@ if [[ $k93sys_terminal_enabled == "true" ]]
         mosquitto_sub -h "$server" -u "$mqtt_user" -P "$mqtt_pwd" -t "$mqtt_topic/$mqtt_device/action_update" | \
         while read -r action_update_payload; do
             if [[ "$action_update_payload" != "" ]]; then   
-                #action_update=$(eval "$action_update_exec")
-#                $action_update_exec&
                 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/terminal-input -m "$cmd_action_update_reboot_exec"
                 sleep $mqtt_connection_throttle 
                 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/action_update -m ""
@@ -980,8 +918,6 @@ if [[ $k93sys_terminal_enabled == "true" ]]
         mosquitto_sub -h "$server" -u "$mqtt_user" -P "$mqtt_pwd" -t "$mqtt_topic/$mqtt_device/action_check_update" | \
         while read -r action_check_update_payload; do
             if [[ "$action_check_update_payload" != "" ]]; then   
-                #action_update=$(eval "$action_update_exec")
-#                $action_update_exec&
                 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/terminal-input -m "$cmd_action_check_update_exec"
                 sleep $mqtt_connection_throttle 
                 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/action_check_update_payload -m ""
@@ -991,8 +927,6 @@ if [[ $k93sys_terminal_enabled == "true" ]]
         mosquitto_sub -h "$server" -u "$mqtt_user" -P "$mqtt_pwd" -t "$mqtt_topic/$mqtt_device/action_reboot" | \
         while read -r action_reboot_payload; do
             if [[ "$action_reboot_payload" != "" ]]; then   
-                #action_reboot=$(eval "$action_reboot_exec")
-#                $action_reboot_exec&
                 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/terminal-input -m "$cmd_action_reboot_exec"
                 sleep $mqtt_connection_throttle 
                 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/action_reboot -m ""
@@ -1002,8 +936,6 @@ if [[ $k93sys_terminal_enabled == "true" ]]
                 mosquitto_sub -h "$server" -u "$mqtt_user" -P "$mqtt_pwd" -t "$mqtt_topic/$mqtt_device/action_shutdown" | \
         while read -r action_shutdown_payload; do
             if [[ "$action_shutdown_payload" != "" ]]; then   
-                #action_shutdown=$(eval "$action_shutdown_exec")
-#                $action_shutdown_exec&
                 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/terminal-input -m "$cmd_action_shutdown_exec"
                 sleep $mqtt_connection_throttle 
                 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/action_shutdown -m ""
@@ -1014,8 +946,6 @@ mosquitto_sub -h "$server" -u "$mqtt_user" -P "$mqtt_pwd" -t "$mqtt_topic/$mqtt_
 while read -r execmd_restartk93sys_payload; do
     if [[ "$execmd_restartk93sys_payload" != "" ]]; then   
         execmd_restartk93sys=$(eval "$cmd_action_restart_k93sys")
-        #  done    
-        #$cmd_action_restart_k93sys&
         mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/terminal-input -m "$cmd_action_restart_k93sys"
         sleep $mqtt_connection_throttle  
         mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/terminal-input -m ""
@@ -1027,8 +957,6 @@ if [[ $custom_action_1_enabled == "true" ]]
         mosquitto_sub -h "$server" -u "$mqtt_user" -P "$mqtt_pwd" -t "$mqtt_topic/$mqtt_device/custom_action_1" | \
         while read -r custom_action_1_payload; do
             if [[ "$custom_action_1_payload" != "" ]]; then   
-                #custom_action_1=$(eval "$custom_action_1_exec")
-#                $custom_action_1_exec&
                 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/terminal-input -m "$custom_action_1_exec"
                 sleep $mqtt_connection_throttle 
                 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/custom_action_1 -m ""
@@ -1041,7 +969,6 @@ if [[ $custom_action_2_enabled == "true" ]]
         mosquitto_sub -h "$server" -u "$mqtt_user" -P "$mqtt_pwd" -t "$mqtt_topic/$mqtt_device/custom_action_2" | \
         while read -r custom_action_2_payload; do
             if [[ "$custom_action_2_payload" != "" ]]; then   
-#                $custom_action_2_exec&
                 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/terminal-input -m "$custom_action_2_exec"
                 sleep $mqtt_connection_throttle 
                 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/custom_action_2 -m ""
@@ -1054,7 +981,6 @@ if [[ $custom_action_3_enabled == "true" ]]
         mosquitto_sub -h "$server" -u "$mqtt_user" -P "$mqtt_pwd" -t "$mqtt_topic/$mqtt_device/custom_action_3" | \
         while read -r custom_action_3_payload; do
             if [[ "$custom_action_3_payload" != "" ]]; then   
-#                $custom_action_3_exec&
                 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/terminal-input -m "$custom_action_3_exec"
                 sleep $mqtt_connection_throttle 
                 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/custom_action_3 -m ""
@@ -1067,7 +993,6 @@ if [[ $custom_action_4_enabled == "true" ]]
         mosquitto_sub -h "$server" -u "$mqtt_user" -P "$mqtt_pwd" -t "$mqtt_topic/$mqtt_device/custom_action_4" | \
         while read -r custom_action_4_payload; do
             if [[ "$custom_action_4_payload" != "" ]]; then  
-#                $custom_action_4_exec& 
                 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/terminal-input -m "$custom_action_4_exec"
                 sleep $mqtt_connection_throttle 
                 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/custom_action_4 -m ""
@@ -1080,7 +1005,6 @@ if [[ $custom_action_5_enabled == "true" ]]
         mosquitto_sub -h "$server" -u "$mqtt_user" -P "$mqtt_pwd" -t "$mqtt_topic/$mqtt_device/custom_action_5" | \
         while read -r custom_action_5_payload; do
             if [[ "$custom_action_5_payload" != "" ]]; then   
-#                $custom_action_5_exec& 
                 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/terminal-input -m "$custom_action_5_exec"
                 sleep $mqtt_connection_throttle 
                 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/custom_action_5 -m ""
@@ -1092,8 +1016,6 @@ if [[ $custom_action_6_enabled == "true" ]]
         mosquitto_sub -h "$server" -u "$mqtt_user" -P "$mqtt_pwd" -t "$mqtt_topic/$mqtt_device/custom_action_6" | \
         while read -r custom_action_6_payload; do
             if [[ "$custom_action_6_payload" != "" ]]; then   
-                #custom_action_6=$(eval "$custom_action_6_exec")
-#                $custom_action_6_exec&
                 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/terminal-input -m "$custom_action_6_exec"
                 sleep $mqtt_connection_throttle 
                 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/custom_action_6 -m ""
@@ -1106,8 +1028,6 @@ if [[ $custom_action_7_enabled == "true" ]]
         mosquitto_sub -h "$server" -u "$mqtt_user" -P "$mqtt_pwd" -t "$mqtt_topic/$mqtt_device/custom_action_7" | \
         while read -r custom_action_7_payload; do
             if [[ "$custom_action_7_payload" != "" ]]; then   
-                #custom_action_7=$(eval "$custom_action_7_exec")
-#                $custom_action_7_exec&
                 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/terminal-input -m "$custom_action_7_exec"
                 sleep $mqtt_connection_throttle 
                 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/custom_action_7 -m ""
@@ -1120,8 +1040,6 @@ if [[ $custom_action_8_enabled == "true" ]]
         mosquitto_sub -h "$server" -u "$mqtt_user" -P "$mqtt_pwd" -t "$mqtt_topic/$mqtt_device/custom_action_8" | \
         while read -r custom_action_8_payload; do
             if [[ "$custom_action_8_payload" != "" ]]; then   
-                #custom_action_8=$(eval "$custom_action_8_exec")
-#                $custom_action_8_exec&
                 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/terminal-input -m "$custom_action_8_exec"
                 sleep $mqtt_connection_throttle 
                 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/custom_action_8 -m ""
@@ -1134,8 +1052,6 @@ if [[ $custom_action_9_enabled == "true" ]]
         mosquitto_sub -h "$server" -u "$mqtt_user" -P "$mqtt_pwd" -t "$mqtt_topic/$mqtt_device/custom_action_9" | \
         while read -r custom_action_9_payload; do
             if [[ "$custom_action_9_payload" != "" ]]; then   
-                #custom_action_9=$(eval "$custom_action_9_exec")
-#                $custom_action_9_exec&
                 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/terminal-input -m "$custom_action_9_exec"
                 sleep $mqtt_connection_throttle 
                 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/custom_action_9 -m ""
@@ -1148,8 +1064,6 @@ if [[ $custom_action_10_enabled == "true" ]]
         mosquitto_sub -h "$server" -u "$mqtt_user" -P "$mqtt_pwd" -t "$mqtt_topic/$mqtt_device/custom_action_10" | \
         while read -r custom_action_10_payload; do
             if [[ "$custom_action_10_payload" != "" ]]; then   
-                #custom_action_10=$(eval "$custom_action_10_exec")
-#                $custom_action_10_exec&
                 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/terminal-input -m "$custom_action_10_exec"
                 sleep $mqtt_connection_throttle 
                 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/custom_action_10 -m ""
@@ -1162,8 +1076,6 @@ if [[ $custom_action_11_enabled == "true" ]]
         mosquitto_sub -h "$server" -u "$mqtt_user" -P "$mqtt_pwd" -t "$mqtt_topic/$mqtt_device/custom_action_11" | \
         while read -r custom_action_11_payload; do
             if [[ "$custom_action_11_payload" != "" ]]; then   
-                #custom_action_11=$(eval "$custom_action_11_exec")
-#                $custom_action_11_exec&
                 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/terminal-input -m "$custom_action_11_exec"
                 sleep $mqtt_connection_throttle 
                 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/custom_action_11 -m ""
@@ -1176,8 +1088,6 @@ if [[ $custom_action_12_enabled == "true" ]]
         mosquitto_sub -h "$server" -u "$mqtt_user" -P "$mqtt_pwd" -t "$mqtt_topic/$mqtt_device/custom_action_12" | \
         while read -r custom_action_12_payload; do
             if [[ "$custom_action_12_payload" != "" ]]; then   
-                #custom_action_12=$(eval "$custom_action_12_exec")
-#                $custom_action_12_exec&
                 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/terminal-input -m "$custom_action_12_exec"
                 sleep $mqtt_connection_throttle 
                 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/custom_action_12 -m ""
@@ -1190,8 +1100,6 @@ if [[ $custom_action_13_enabled == "true" ]]
         mosquitto_sub -h "$server" -u "$mqtt_user" -P "$mqtt_pwd" -t "$mqtt_topic/$mqtt_device/custom_action_13" | \
         while read -r custom_action_13_payload; do
             if [[ "$custom_action_13_payload" != "" ]]; then   
-                #custom_action_13=$(eval "$custom_action_13_exec")
-#                $custom_action_13_exec&
                 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/terminal-input -m "$custom_action_13_exec"
                 sleep $mqtt_connection_throttle 
                 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/custom_action_13 -m ""
@@ -1204,8 +1112,6 @@ if [[ $custom_action_14_enabled == "true" ]]
         mosquitto_sub -h "$server" -u "$mqtt_user" -P "$mqtt_pwd" -t "$mqtt_topic/$mqtt_device/custom_action_14" | \
         while read -r custom_action_14_payload; do
             if [[ "$custom_action_14_payload" != "" ]]; then   
-                #custom_action_14=$(eval "$custom_action_14_exec")
-#                $custom_action_14_exec&
                 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/terminal-input -m "$custom_action_14_exec"
                 sleep $mqtt_connection_throttle 
                 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/custom_action_14 -m ""
@@ -1218,8 +1124,6 @@ if [[ $custom_action_15_enabled == "true" ]]
         mosquitto_sub -h "$server" -u "$mqtt_user" -P "$mqtt_pwd" -t "$mqtt_topic/$mqtt_device/custom_action_15" | \
         while read -r custom_action_15_payload; do
             if [[ "$custom_action_15_payload" != "" ]]; then   
-                #custom_action_15=$(eval "$custom_action_15_exec")
-#                $custom_action_15_exec&
                 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/terminal-input -m "$custom_action_15_exec"
                 sleep $mqtt_connection_throttle 
                 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device/custom_action_15 -m ""
@@ -1227,18 +1131,15 @@ if [[ $custom_action_15_enabled == "true" ]]
         done&
 fi
 
-
-
-# Status data publishing loop
 (
     while :; do
         log_file="k93sys.log"        
         if [[ $app_tui == "true" ]]
             then    
                 add_log_entry() {
-                    timestamp=$(date +"%H:%M:%S")  # Get current time in hh:mm:ss format
-                    log_entry="$timestamp $1"  # Prepend the timestamp to the log entry
-                    echo "$log_entry" >> "$log_file"  # Append the log entry to the log file
+                    timestamp=$(date +"%H:%M:%S") 
+                    log_entry="$timestamp $1" 
+                    echo "$log_entry" >> "$log_file"
                 }
         fi 
 
@@ -1330,15 +1231,14 @@ fi
 )&
 pids+=($!)
 
-# Component data publishing loop
 (
     while :; do
         if [[ $app_tui == "true" ]]
             then    
                 add_log_entry() {
-                    timestamp=$(date +"%H:%M:%S")  # Get current time in hh:mm:ss format
-                    log_entry="$timestamp $1"  # Prepend the timestamp to the log entry
-                    echo "$log_entry" >> "$log_file"  # Append the log entry to the log file
+                    timestamp=$(date +"%H:%M:%S")
+                    log_entry="$timestamp $1" 
+                    echo "$log_entry" >> "$log_file"
                 }
         fi
         if [[ $lmsnsr_enabled == "true" ]]
@@ -1411,7 +1311,6 @@ pids+=($!)
         if [[ $cmd_iowait != "" ]]
             then
                  iowait=$(mpstat 1 1 | grep -A 1 "all" | tail -n 1 | awk '{print $6}')
-                 #iowait=$(eval "$cmd_iowait")
         fi
 
         source "$script_path/bin/component-fetch.conf"  
@@ -1507,15 +1406,12 @@ pids+=($!)
         if [[ $app_tui == "true" ]]
             then    
                 add_log_entry() {
-                    timestamp=$(date +"%H:%M:%S")  # Get current time in hh:mm:ss format
-                    log_entry="$timestamp $1"  # Prepend the timestamp to the log entry
-                    echo "$log_entry" >> "$log_file"  # Append the log entry to the log file
+                    timestamp=$(date +"%H:%M:%S")
+                    log_entry="$timestamp $1" 
+                    echo "$log_entry" >> "$log_file"
                 }
         fi
-        #net_mon_freq#
         net_monitor_freq="1" #$((net_freq / 1,5))
-        #net_monitor_freq="$net_mon_freq"
-        #net_monitor_freq=$(echo "$net_freq / 5.0" | bc -l)
         nic_total_in="0"
         nic_total_out="0"
         if [[ $nic_1_enabled == "true" ]]
@@ -1608,7 +1504,6 @@ pids+=($!)
 )&
 pids+=($!)
 
-# NET monitoring loop
 (
 
     while :; do
@@ -1616,9 +1511,9 @@ pids+=($!)
         if [[ $app_tui == "true" ]]
             then    
                 add_log_entry() {
-                    timestamp=$(date +"%H:%M:%S")  # Get current time in hh:mm:ss format
-                    log_entry="$timestamp $1"  # Prepend the timestamp to the log entry
-                    echo "$log_entry" >> "$log_file"  # Append the log entry to the log file
+                    timestamp=$(date +"%H:%M:%S") 
+                    log_entry="$timestamp $1"
+                    echo "$log_entry" >> "$log_file"e
                 }
         fi
 
@@ -1732,22 +1627,20 @@ pids+=($!)
 )&
 pids+=($!)
 
-# HDD info loop 
 (
     while :; do
         log_file="k93sys.log"        
         if [[ $app_tui == "true" ]]
             then    
                 add_log_entry() {
-                    timestamp=$(date +"%H:%M:%S")  # Get current time in hh:mm:ss format
-                    log_entry="$timestamp $1"  # Prepend the timestamp to the log entry
-                    echo "$log_entry" >> "$log_file"  # Append the log entry to the log file
+                    timestamp=$(date +"%H:%M:%S") 
+                    log_entry="$timestamp $1"
+                    echo "$log_entry" >> "$log_file"
                 }
         fi    
 
         if [[ $hddmon_enabled == "true" ]]
             then
-                # storage
                 storage_used_space_gb=$(df /mnt/storage --output=used | tail -n 1 | awk '{print $1/1024/1024}')
                 storage_free_space_gb=$(df /mnt/storage --output=avail | tail -n 1 | awk '{print $1/1024/1024}')
                 storage_total_space_gb=$(echo "$storage_used_space_gb + $storage_free_space_gb" | bc)
@@ -1897,16 +1790,15 @@ pids+=($!)
 )&
 pids+=($!)
 
-# HDD monitoring loop 
 (
     while :; do
         log_file="k93sys.log"        
         if [[ $app_tui == "true" ]]
             then    
                 add_log_entry() {
-                    timestamp=$(date +"%H:%M:%S")  # Get current time in hh:mm:ss format
-                    log_entry="$timestamp $1"  # Prepend the timestamp to the log entry
-                    echo "$log_entry" >> "$log_file"  # Append the log entry to the log file
+                    timestamp=$(date +"%H:%M:%S") 
+                    log_entry="$timestamp $1"
+                    echo "$log_entry" >> "$log_file"
                 }
         fi    
 
@@ -1917,93 +1809,74 @@ pids+=($!)
             then
                 if [[ $hddmon_1_enabled == "true" ]]
                     then    
-                        # hddmon_1 Configuration (e.g., /dev/sda)
                         hddmon_1_reads=$(iostat -d -m 1 2 | grep $hddmon_1_device | tail -n 1 | awk '{print $3}')
                         hddmon_1_writes=$(iostat -d -m 1 2 | grep $hddmon_1_device | tail -n 1 | awk '{print $4}')
-               #         wait
                         hddmon_total_reads=$(echo "$hddmon_total_reads + $hddmon_1_reads" | bc)
                         hddmon_total_writes=$(echo "$hddmon_total_writes + $hddmon_1_writes" | bc)                
                 fi
 
                 if [[ $hddmon_2_enabled == "true" ]]
                     then          
-                        # hddmon_2 Configuration (e.g., /dev/sdb)
                         hddmon_2_reads=$(iostat -d -m 1 2 | grep $hddmon_2_device | tail -n 1 | awk '{print $3}')
                         hddmon_2_writes=$(iostat -d -m 1 2 | grep $hddmon_2_device | tail -n 1 | awk '{print $4}')
-                #        wait
                         hddmon_total_reads=$(echo "$hddmon_total_reads + $hddmon_2_reads" | bc)
                         hddmon_total_writes=$(echo "$hddmon_total_writes + $hddmon_2_writes" | bc)                
                 fi
 
                 if [[ $hddmon_3_enabled == "true" ]]
                     then       
-                        # hddmon_3 Configuration (e.g., /dev/sdc)
                         hddmon_3_reads=$(iostat -d -m 1 2 | grep $hddmon_3_device | tail -n 1 | awk '{print $3}')
                         hddmon_3_writes=$(iostat -d -m 1 2 | grep $hddmon_3_device | tail -n 1 | awk '{print $4}')
-                #        wait
                         hddmon_total_reads=$(echo "$hddmon_total_reads + $hddmon_3_reads" | bc)
                         hddmon_total_writes=$(echo "$hddmon_total_writes + $hddmon_3_writes" | bc)
                 fi
 
                 if [[ $hddmon_4_enabled == "true" ]]
                     then       
-                        # hddmon_4 Configuration (e.g., /dev/sdd)
                         hddmon_4_reads=$(iostat -d -m 1 2 | grep $hddmon_4_device | tail -n 1 | awk '{print $3}')
                         hddmon_4_writes=$(iostat -d -m 1 2 | grep $hddmon_4_device | tail -n 1 | awk '{print $4}')
-              #          wait
                         hddmon_total_reads=$(echo "$hddmon_total_reads + $hddmon_4_reads" | bc)
                         hddmon_total_writes=$(echo "$hddmon_total_writes + $hddmon_4_writes" | bc)
                 fi
 
                 if [[ $hddmon_5_enabled == "true" ]]
                     then       
-                        # hddmon_5 Configuration (e.g., /dev/sdd)
                         hddmon_5_reads=$(iostat -d -m 1 2 | grep $hddmon_5_device | tail -n 1 | awk '{print $3}')
                         hddmon_5_writes=$(iostat -d -m 1 2 | grep $hddmon_5_device | tail -n 1 | awk '{print $4}')        
-         #               wait
                         hddmon_total_reads=$(echo "$hddmon_total_reads + $hddmon_5_reads" | bc)
                         hddmon_total_writes=$(echo "$hddmon_total_writes + $hddmon_5_writes" | bc)
                 fi
-          #      wait
+                
                 hddmon_total_rw=$(echo "$hddmon_total_writes + $hddmon_total_reads" | bc)
-    #    fi
-        #        wait
+
                 source "$script_path/bin/hddrw-fetch.conf"  
-        #        sleep 3.5s
-   #     if [[ $hddmon_enabled == "true" ]]
-   #         then
 
                 if [[ $hddmon_1_enabled == "true" ]]
                     then  
-                # Publish hddmon_1 Data
                         mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t "$mqtt_topic/$mqtt_device/hddmon_1_reads" -m "$hddmon_1_reads"
                         mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t "$mqtt_topic/$mqtt_device/hddmon_1_writes" -m "$hddmon_1_writes"
                 fi
 
                 if [[ $hddmon_2_enabled == "true" ]]
                     then  
-                # Publish hddmon_2 Data
                         mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t "$mqtt_topic/$mqtt_device/hddmon_2_reads" -m "$hddmon_2_reads"
                         mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t "$mqtt_topic/$mqtt_device/hddmon_2_writes" -m "$hddmon_2_writes"
                 fi
 
                 if [[ $hddmon_3_enabled == "true" ]]
                     then  
-                # Publish hddmon_3 Data
                         mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t "$mqtt_topic/$mqtt_device/hddmon_3_reads" -m "$hddmon_3_reads"
                         mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t "$mqtt_topic/$mqtt_device/hddmon_3_writes" -m "$hddmon_3_writes"
                 fi
 
                 if [[ $hddmon_4_enabled == "true" ]]
                     then  
-                # Publish hddmon_4 Data
                         mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t "$mqtt_topic/$mqtt_device/hddmon_4_reads" -m "$hddmon_4_reads"
                         mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t "$mqtt_topic/$mqtt_device/hddmon_4_writes" -m "$hddmon_4_writes"
                 fi
 
                 if [[ $hddmon_5_enabled == "true" ]]
                     then  
-                # Publish hddmon_5 Data
                         mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t "$mqtt_topic/$mqtt_device/hddmon_5_reads" -m "$hddmon_5_reads"
                         mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t "$mqtt_topic/$mqtt_device/hddmon_5_writes" -m "$hddmon_5_writes"
                 fi
@@ -2016,7 +1889,6 @@ pids+=($!)
             then
                 add_log_entry "System Monitoring complete"
         fi
-              #  add_log_entry "System Monitoring complete"
         
         sleep $storage_rw_freq
     done&
@@ -2024,7 +1896,6 @@ pids+=($!)
 pids+=($!)
 
 trap cleanup SIGINT SIGTERM
-# Wait for all background processes
 wait
 mosquitto_pub -h $server -u $mqtt_user -P $mqtt_pwd -t $mqtt_topic/$mqtt_device-status -m 'offline'
 wait
