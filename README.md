@@ -2,8 +2,9 @@ K93SYS NIX Daemon - Integrate your *nix system into Home Assistant with Bash and
 
 Features:
  - Utilization sensors
- - System, Update -status
+ - lm-sensors
  - Management: Install updates to host, docker-stacks and more
  - Full TTY output and input
  - Custom actions
  - Custom sensors
+ - +++
